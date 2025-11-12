@@ -3,51 +3,115 @@
  * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
  */
 
-import { Platform } from 'react-native';
-
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+const primaryColor = '#1e3a8a'; // Dark Blue
+const accentColor = '#38BDF8'; // Sky Blue
 
 export const Colors = {
   light: {
     text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
+    background: '#FFFFFF',
+    tint: primaryColor,
     icon: '#687076',
     tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
+    tabIconSelected: primaryColor,
+    primary: primaryColor,
+    accent: accentColor,
+    error: '#EF4444', // Red for errors
   },
   dark: {
     text: '#ECEDEE',
     background: '#151718',
-    tint: tintColorDark,
+    tint: '#FFFFFF',
     icon: '#9BA1A6',
     tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
+    tabIconSelected: '#FFFFFF',
+    primary: primaryColor,
+    accent: accentColor,
+    error: '#F87171', // Lighter red for dark mode
   },
 };
 
-export const Fonts = Platform.select({
-  ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
+export const Fonts = {
+  family: {
+    primary: 'Poppins',
+    sans: 'Inter, Roboto, sans-serif', // Fallback fonts
   },
-  default: {
-    sans: 'normal',
-    serif: 'serif',
-    rounded: 'normal',
-    mono: 'monospace',
+  sizes: {
+    title: 28,
+    subtitle: 20,
+    body: 16,
+    caption: 12,
   },
-  web: {
-    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-    serif: "Georgia, 'Times New Roman', serif",
-    rounded: "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
-    mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+  weights: {
+    regular: '400',
+    medium: '500',
+    bold: '700',
   },
-});
+};
+
+export const ButtonStyles = {
+  primary: {
+    backgroundColor: primaryColor,
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  secondary: {
+    backgroundColor: 'transparent',
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderWidth: 1,
+    borderColor: primaryColor,
+  },
+  text: {
+    color: '#FFFFFF',
+    fontSize: Fonts.sizes.body,
+    fontWeight: Fonts.weights.bold,
+    textAlign: 'center',
+  },
+  secondaryText: {
+    color: primaryColor,
+    fontSize: Fonts.sizes.body,
+    fontWeight: Fonts.weights.bold,
+    textAlign: 'center',
+  }
+};
+
+export const InputStyles = {
+  container: {
+    width: '100%',
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: Fonts.sizes.body,
+    fontWeight: Fonts.weights.medium,
+    marginBottom: 8,
+  },
+  input: {
+    height: 50,
+    borderWidth: 1,
+    borderColor: '#D1D5DB', // Neutral color
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    fontSize: Fonts.sizes.body,
+  },
+  inputFocused: {
+    borderColor: primaryColor,
+    borderWidth: 2,
+  },
+  inputError: {
+    borderColor: Colors.light.error,
+    borderWidth: 2,
+  },
+  errorText: {
+    color: Colors.light.error,
+    fontSize: Fonts.sizes.caption,
+    marginTop: 4,
+  }
+};
