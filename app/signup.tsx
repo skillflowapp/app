@@ -1,14 +1,37 @@
-
 import { ThemedText } from '@/components/themed-text';
 import { Colors } from '@/constants/theme';
 import { router, Stack } from 'expo-router';
-import React from 'react';
-import { Image, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useState } from 'react';
+import { Image, StyleSheet, TextInput, TouchableOpacity, View, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AntDesign } from '@expo/vector-icons';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@/constants/firebase';
 
 export default function SignupScreen() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSignup = () => {
+    setLoading(true);
+    createUserWithEmailAndPassword(auth, email, password)
+      .then(userCredential => {
+        // Signed up 
+        const user = userCredential.user;
+        router.replace('/(tabs)');
+      })
+      .catch(error => {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        Alert.alert(errorCode, errorMessage);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -26,8 +49,8 @@ export default function SignupScreen() {
           <Image source={require('../assets/images/icon.png')} style={styles.logo} />
         </View>
         <View style={styles.formContainer}>
-          <ThemedText style={styles.title}>Signup</ThemedText>
-          <ThemedText style={styles.subtitle}>Create an account to continue.</ThemedText>
+          <ThemedText style={styles.title}>Sign Up</ThemedText>
+          <ThemedText style={styles.subtitle}>Create an account to get started.</ThemedText>
 
           <View style={styles.inputContainer}>
             <ThemedText style={styles.label}>EMAIL</ThemedText>
@@ -37,6 +60,8 @@ export default function SignupScreen() {
               placeholderTextColor="#999"
               keyboardType="email-address"
               autoCapitalize="none"
+              onChangeText={setEmail}
+              value={email}
             />
           </View>
 
@@ -47,26 +72,17 @@ export default function SignupScreen() {
               placeholder="******"
               placeholderTextColor="#999"
               secureTextEntry
+              onChangeText={setPassword}
+              value={password}
             />
           </View>
 
-          <View style={styles.inputContainer}>
-            <ThemedText style={styles.label}>CONFIRM PASSWORD</ThemedText>
-            <TextInput
-              style={styles.input}
-              placeholder="******"
-              placeholderTextColor="#999"
-              secureTextEntry
-            />
-          </View>
-
-          <TouchableOpacity style={styles.button}>
-            <ThemedText style={styles.buttonText}>Sign up</ThemedText>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.button, styles.googleButton]}>
-            <AntDesign name="google" size={20} color="white" style={styles.googleIcon} />
-            <ThemedText style={styles.buttonText}>Sign in with Google</ThemedText>
+          <TouchableOpacity style={styles.button} onPress={handleSignup} disabled={loading}>
+            {loading ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <ThemedText style={styles.buttonText}>Sign up</ThemedText>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => router.push('/login')}>
@@ -160,16 +176,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
   },
-  googleButton: {
-    backgroundColor: '#4285F4',
-  },
   buttonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
-  },
-  googleIcon: {
-    marginRight: 12,
   },
   loginText: {
     color: Colors.light.primary,

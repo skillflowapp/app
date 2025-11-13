@@ -2,13 +2,37 @@
 import { ThemedText } from '@/components/themed-text';
 import { Colors } from '@/constants/theme';
 import { router, Stack } from 'expo-router';
-import React from 'react';
-import { Image, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useState } from 'react';
+import { Image, StyleSheet, TextInput, TouchableOpacity, View, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AntDesign } from '@expo/vector-icons';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../constants/firebase';
 
 export default function LoginScreen() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = () => {
+    setLoading(true);
+    signInWithEmailAndPassword(auth, email, password)
+      .then(userCredential => {
+        // Signed in 
+        const user = userCredential.user;
+        router.replace('/(tabs)');
+      })
+      .catch(error => {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        Alert.alert(errorCode, errorMessage);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -37,6 +61,8 @@ export default function LoginScreen() {
               placeholderTextColor="#999"
               keyboardType="email-address"
               autoCapitalize="none"
+              onChangeText={setEmail}
+              value={email}
             />
           </View>
 
@@ -47,11 +73,17 @@ export default function LoginScreen() {
               placeholder="******"
               placeholderTextColor="#999"
               secureTextEntry
+              onChangeText={setPassword}
+              value={password}
             />
           </View>
 
-          <TouchableOpacity style={styles.button}>
-            <ThemedText style={styles.buttonText}>Log in</ThemedText>
+          <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
+            {loading ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <ThemedText style={styles.buttonText}>Log in</ThemedText>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity style={[styles.button, styles.googleButton]}>

@@ -1,19 +1,42 @@
-import React from 'react';
+import { useRouter, useSegments } from "expo-router";
+import React, { useState, useEffect } from "react";
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth } from '@/constants/firebase';
 
-export const SessionContext = React.createContext<{ session: any; isLoading: boolean }>({ session: null, isLoading: false });
-
-export function useSession() {
-  return React.useContext(SessionContext);
+interface Session {
+  session: string | null;
+  isLoading: boolean;
 }
 
-export function SessionProvider(props: any) {
-    //will be implemented later
-  const [session, setSession] = React.useState(null);
-  const [isLoading, setIsLoading] = React.useState(false);
+const AuthContext = React.createContext<Session>({ session: null, isLoading: true });
+
+export function useSession() {
+  return React.useContext(AuthContext);
+}
+
+export function SessionProvider(props: React.PropsWithChildren) {
+  const [session, setSession] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user: User | null) => {
+      if (user) {
+        setSession(user.uid);
+        router.replace('/(tabs)');
+      } else {
+        setSession(null);
+      }
+      setIsLoading(false);
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, []);
 
   return (
-    <SessionContext.Provider value={{ session, isLoading }}>
+    <AuthContext.Provider value={{ session, isLoading }}>
       {props.children}
-    </SessionContext.Provider>
+    </AuthContext.Provider>
   );
 }
