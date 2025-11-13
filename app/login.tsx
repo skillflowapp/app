@@ -5,7 +5,7 @@ import { router, Stack } from 'expo-router';
 import React, { useState } from 'react';
 import { Image, StyleSheet, TextInput, TouchableOpacity, View, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AntDesign } from '@expo/vector-icons';
+import { AntDesign, FontAwesome } from '@expo/vector-icons';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../constants/firebase';
@@ -31,6 +31,10 @@ export default function LoginScreen() {
       .finally(() => {
         setLoading(false);
       });
+  };
+
+  const handleAppleSignup = () => {
+    Alert.alert("Apple Signup", "This feature is not yet implemented.");
   };
 
   return (
@@ -87,8 +91,13 @@ export default function LoginScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity style={[styles.button, styles.googleButton]}>
-            <AntDesign name="google" size={20} color="white" style={styles.googleIcon} />
+            <AntDesign name="google" size={20} color="white" style={styles.icon} />
             <ThemedText style={styles.buttonText}>Sign in with Google</ThemedText>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={[styles.button, styles.appleButton]} onPress={handleAppleSignup}>
+            <FontAwesome name="apple" size={20} color="white" style={styles.icon} />
+            <ThemedText style={styles.buttonText}>Sign in with Apple</ThemedText>
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => router.push('/signup')}>
@@ -185,12 +194,15 @@ const styles = StyleSheet.create({
   googleButton: {
     backgroundColor: '#4285F4',
   },
+  appleButton: {
+    backgroundColor: '#000000',
+  },
   buttonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
   },
-  googleIcon: {
+  icon: {
     marginRight: 12,
   },
   signupText: {

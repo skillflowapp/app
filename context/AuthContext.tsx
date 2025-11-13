@@ -1,51 +1,59 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth } from '@/constants/firebase';
+import { auth, db } from '@/constants/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
-type AuthSession = User | null;
+export interface UserProfile extends User {
+  bio?: string;
+}
 
 interface AuthContextType {
-  session: AuthSession;
+  session: UserProfile | null;
   isLoading: boolean;
+  setSession: (session: UserProfile | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
   session: null,
   isLoading: true,
+  setSession: () => {},
 });
 
-// This hook can be used to access the user info.
 export function useSession() {
-  const value = useContext(AuthContext);
-  if (process.env.NODE_ENV !== 'production') {
-    if (!value) {
-      throw new Error('useSession must be wrapped in a <SessionProvider />');
-    }
-  }
-  return value;
+  return useContext(AuthContext);
 }
 
 export function SessionProvider(props: React.PropsWithChildren) {
-  const [session, setSession] = useState<AuthSession>(null);
+  const [session, setSession] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setSession(user);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const docRef = doc(db, 'profiles', user.uid);
+        const docSnap = await getDoc(docRef);
+        let userProfile: UserProfile = { ...user, bio: '' };
+        if (docSnap.exists()) {
+          userProfile.bio = docSnap.data()?.bio || '';
+        }
+        setSession(userProfile);
+      } else {
+        setSession(null);
+      }
       setIsLoading(false);
     });
 
-    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, []);
 
+  const value = {
+    session,
+    isLoading,
+    setSession,
+  };
+
   return (
-    <AuthContext.Provider
-      value={{
-        session,
-        isLoading,
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {props.children}
     </AuthContext.Provider>
   );
