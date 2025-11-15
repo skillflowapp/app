@@ -2,36 +2,59 @@
 import { ThemedText } from '@/components/themed-text';
 import { Colors } from '@/constants/theme';
 import { router, Stack } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Image, StyleSheet, TextInput, TouchableOpacity, View, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AntDesign, FontAwesome } from '@expo/vector-icons';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../constants/firebase';
+import { useSession } from '../context/AuthContext';
 
 export default function LoginScreen() {
+  const { session, isLoading } = useSession();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    if (!isLoading && session) {
+      let targetDashboard = '/(app)/student-dashboard';
+      if (session.role === 'admin') {
+        targetDashboard = '/(app)/admin-dashboard';
+      } else if (session.role === 'teacher') {
+        targetDashboard = '/(app)/teacher-dashboard';
+      }
+      router.replace(targetDashboard);
+    }
+  }, [session, isLoading]);
+
   const handleLogin = () => {
     setLoading(true);
     signInWithEmailAndPassword(auth, email, password)
-      .then(userCredential => {
-        // Signed in 
-        const user = userCredential.user;
-        router.replace('/(tabs)');
+      .then(() => {
+        console.log('Login successful');
       })
       .catch(error => {
         const errorCode = error.code;
         const errorMessage = error.message;
         Alert.alert(errorCode, errorMessage);
-      })
-      .finally(() => {
         setLoading(false);
       });
   };
+
+  useEffect(() => {
+    if (session && !isLoading) {
+      let targetDashboard = '/(app)/student-dashboard';
+      if (session.role === 'admin') {
+        targetDashboard = '/(app)/admin-dashboard';
+      } else if (session.role === 'teacher') {
+        targetDashboard = '/(app)/teacher-dashboard';
+      }
+      console.log('Redirecting to:', targetDashboard);
+      router.replace(targetDashboard);
+    }
+  }, [session, isLoading]);
 
   const handleAppleSignup = () => {
     Alert.alert("Apple Signup", "This feature is not yet implemented.");

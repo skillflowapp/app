@@ -5,6 +5,7 @@ import { doc, getDoc } from 'firebase/firestore';
 
 export interface UserProfile extends User {
   bio?: string;
+  role?: string;
 }
 
 interface AuthContextType {
@@ -32,10 +33,16 @@ export function SessionProvider(props: React.PropsWithChildren) {
       if (user) {
         const docRef = doc(db, 'profiles', user.uid);
         const docSnap = await getDoc(docRef);
-        let userProfile: UserProfile = { ...user, bio: '' };
+        let userProfile: UserProfile = { ...user, bio: '', role: 'student' };
+        console.log('AuthContext: docSnap.exists:', docSnap.exists());
         if (docSnap.exists()) {
-          userProfile.bio = docSnap.data()?.bio || '';
+          const data = docSnap.data();
+          console.log('AuthContext: data:', data);
+          userProfile.bio = data?.bio || '';
+          userProfile.role = data?.role || 'student';
+          console.log('AuthContext: set role to:', userProfile.role);
         }
+        console.log('AuthContext: setting session with role:', userProfile.role);
         setSession(userProfile);
       } else {
         setSession(null);

@@ -72,13 +72,13 @@ export const ButtonStyles = {
   text: {
     color: '#FFFFFF',
     fontSize: Fonts.sizes.body,
-    fontWeight: Fonts.weights.bold,
+    fontWeight: 'bold',
     textAlign: 'center',
   },
   secondaryText: {
     color: primaryColor,
     fontSize: Fonts.sizes.body,
-    fontWeight: Fonts.weights.bold,
+    fontWeight: 'bold',
     textAlign: 'center',
   }
 };

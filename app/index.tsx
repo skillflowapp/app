@@ -1,10 +1,31 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Fonts, ButtonStyles, Colors } from '../constants/theme';
 import { router } from 'expo-router';
+import { useSession } from '../context/AuthContext';
 
 const WelcomeScreen = () => {
+  const { session, isLoading } = useSession();
+  const hasRedirected = useRef(false);
+
+  useEffect(() => {
+    console.log('Index useEffect: isLoading:', isLoading, 'session:', session ? { uid: session.uid, role: session.role } : null, 'hasRedirected:', hasRedirected.current);
+    if (isLoading || hasRedirected.current) return;
+    if (session) {
+      let targetDashboard = '/(app)/student-dashboard';
+      console.log('Session role:', session.role);
+      if (session.role === 'admin') {
+        targetDashboard = '/(app)/admin-dashboard';
+      } else if (session.role === 'teacher') {
+        targetDashboard = '/(app)/teacher-dashboard';
+      }
+      console.log('Redirecting to:', targetDashboard);
+      router.replace(targetDashboard);
+      hasRedirected.current = true;
+    }
+  }, [session?.uid, session?.role, isLoading]);
+
   return (
     <SafeAreaView style={styles.container}>
       <LinearGradient
@@ -61,14 +82,14 @@ const styles = StyleSheet.create({
   logo: {
     fontFamily: Fonts.family.primary,
     fontSize: 48,
-    fontWeight: Fonts.weights.bold,
+    fontWeight: 'bold',
     color: '#FFFFFF',
     marginBottom: 12,
   },
   tagline: {
     fontFamily: Fonts.family.sans,
     fontSize: Fonts.sizes.subtitle,
-    fontWeight: Fonts.weights.medium,
+    fontWeight: '500',
     color: '#FFFFFF',
     marginBottom: 48,
   },

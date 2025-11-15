@@ -1,20 +1,35 @@
 import { ThemedText } from '@/components/themed-text';
 import { Colors } from '@/constants/theme';
 import { router, Stack } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Image, StyleSheet, TextInput, TouchableOpacity, View, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AntDesign, FontAwesome } from '@expo/vector-icons';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile, signOut } from 'firebase/auth';
 import { auth, db } from '@/constants/firebase';
 import { doc, setDoc } from 'firebase/firestore';
+import { useSession } from '../context/AuthContext';
 
 export default function SignupScreen() {
+  const { session, isLoading: authLoading } = useSession();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [role, setRole] = useState<'student' | 'teacher'>('student');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && session) {
+      let targetDashboard = '/(app)/student-dashboard';
+      if (session.role === 'admin') {
+        targetDashboard = '/(app)/admin-dashboard';
+      } else if (session.role === 'teacher') {
+        targetDashboard = '/(app)/teacher-dashboard';
+      }
+      router.replace(targetDashboard);
+    }
+  }, [session, authLoading]);
 
   const handleSignup = () => {
     if (password !== confirmPassword) {
@@ -33,19 +48,24 @@ export default function SignupScreen() {
             setDoc(userDocRef, { 
               bio: 'This is a default bio.', // Default bio
               displayName: nameFromEmail,
-              email: user.email
+              email: user.email,
+              role: role,
             }, { merge: true })
             .then(() => {
-              router.replace('/(tabs)');
+              // Sign out the user so they can log in again with the profile
+              signOut(auth).then(() => {
+                router.replace('/login');
+              }).catch(signOutError => {
+                console.error('Error signing out:', signOutError);
+                router.replace('/login');
+              });
             })
             .catch(error => {
               Alert.alert('Error creating profile', error.message);
-              router.replace('/(tabs)'); // Still navigate to the app
             });
           })
           .catch(error => {
             Alert.alert('Error updating profile', error.message);
-            router.replace('/(tabs)'); // Still navigate to the app
           });
       })
       .catch(error => {
@@ -85,6 +105,21 @@ export default function SignupScreen() {
         <View style={styles.formContainer}>
           <ThemedText style={styles.title}>Sign Up</ThemedText>
           <ThemedText style={styles.subtitle}>Create an account to get started.</ThemedText>
+
+          <View style={styles.roleSelector}>
+            <TouchableOpacity
+              style={[styles.roleButton, role === 'student' && styles.selectedRole]}
+              onPress={() => setRole('student')}
+            >
+              <ThemedText style={[styles.roleText, role === 'student' && styles.selectedRoleText]}>Student</ThemedText>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.roleButton, role === 'teacher' && styles.selectedRole]}
+              onPress={() => setRole('teacher')}
+            >
+              <ThemedText style={[styles.roleText, role === 'teacher' && styles.selectedRoleText]}>Teacher</ThemedText>
+            </TouchableOpacity>
+          </View>
 
           <View style={styles.inputContainer}>
             <ThemedText style={styles.label}>EMAIL</ThemedText>
@@ -200,6 +235,28 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
     marginBottom: 24,
+  },
+  roleSelector: {
+    flexDirection: 'row',
+    marginBottom: 20,
+  },
+  roleButton: {
+    flex: 1,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: Colors.light.primary,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginHorizontal: 5,
+  },
+  selectedRole: {
+    backgroundColor: Colors.light.primary,
+  },
+  roleText: {
+    color: Colors.light.primary,
+  },
+  selectedRoleText: {
+    color: 'white',
   },
   inputContainer: {
     width: '100%',
