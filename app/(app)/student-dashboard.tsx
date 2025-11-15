@@ -1,17 +1,26 @@
+import { AdminColors, AdminLayout } from '@/components/admin/AdminLayout';
 import { ThemedText } from '@/components/themed-text';
-import { router, Stack } from 'expo-router';
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity, Modal, Alert, BackHandler, ScrollView } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useSession } from '@/context/AuthContext';
-import { signOut } from 'firebase/auth';
 import { auth } from '@/constants/firebase';
-import { Colors } from '@/constants/theme';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSession } from '@/context/AuthContext';
+import { Ionicons } from '@expo/vector-icons';
+import { router, Stack } from 'expo-router';
+import { signOut } from 'firebase/auth';
+import React, { useEffect, useState } from 'react';
+import { Alert, BackHandler, Modal, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 export default function StudentDashboard() {
   const { session } = useSession();
-  const [modalVisible, setModalVisible] = useState(false);
+  const [profileModalVisible, setProfileModalVisible] = useState(false);
+
+  const studentNavigationItems = [
+    { label: 'Home', icon: 'home', route: '/(app)/student-dashboard' },
+    { label: 'Videos', icon: 'play-circle', route: '/(app)/student-dashboard' },
+    { label: 'Documents', icon: 'document-text', route: '/(app)/student-dashboard' },
+    { label: 'Community', icon: 'people', route: '/(app)/student-dashboard' },
+    { label: 'Exams', icon: 'clipboard', route: '/(app)/student-dashboard' },
+    { label: 'Games', icon: 'game-controller', route: '/(app)/student-dashboard' },
+    { label: 'Settings', icon: 'settings', route: '/(app)/student-dashboard' },
+  ];
 
   useEffect(() => {
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => true);
@@ -19,145 +28,108 @@ export default function StudentDashboard() {
   }, []);
 
   const handleLogout = () => {
-    signOut(auth).then(() => {
-      router.replace('/login');
-    }).catch((error) => {
-      Alert.alert('Logout Error', error.message);
-    });
+    signOut(auth)
+      .then(() => {
+        router.replace('/login');
+      })
+      .catch((error) => {
+        Alert.alert('Logout Error', error.message);
+      });
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <>
       <Stack.Screen options={{ headerShown: false }} />
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.profileIcon}>
-          <Ionicons name="person-circle" size={40} color={Colors.light.primary} />
-        </TouchableOpacity>
-      </View>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.welcomeSection}>
-          <ThemedText style={styles.welcomeTitle}>Welcome back, {session?.displayName || 'Student'}!</ThemedText>
-          <ThemedText style={styles.subtitle}>Ready to continue your learning journey?</ThemedText>
-        </View>
+      <AdminLayout
+        title="Student Dashboard"
+        showHeader
+        showFooter
+        showSidebar
+        brandSubtext="Student"
+        navigationItems={studentNavigationItems}
+        onProfilePress={() => setProfileModalVisible(true)}
+      >
+        <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+          <View style={styles.welcomeSection}>
+            <ThemedText style={styles.welcomeTitle}>
+              Welcome back, {session?.displayName || 'Student'}!
+            </ThemedText>
+            <ThemedText style={styles.subtitle}>Ready to continue your learning journey?</ThemedText>
+          </View>
 
-        <View style={styles.cardsContainer}>
-          <TouchableOpacity style={styles.card}>
-            <Ionicons name="book" size={50} color={Colors.light.primary} />
-            <ThemedText style={styles.cardTitle}>My Courses</ThemedText>
-            <ThemedText style={styles.cardSubtitle}>View enrolled courses</ThemedText>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.card}>
-            <Ionicons name="clipboard" size={50} color={Colors.light.primary} />
-            <ThemedText style={styles.cardTitle}>Assignments</ThemedText>
-            <ThemedText style={styles.cardSubtitle}>Check pending tasks</ThemedText>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.card}>
-            <Ionicons name="chatbubble" size={50} color={Colors.light.primary} />
-            <ThemedText style={styles.cardTitle}>Discussions</ThemedText>
-            <ThemedText style={styles.cardSubtitle}>Join class discussions</ThemedText>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.card}>
-            <Ionicons name="trophy" size={50} color={Colors.light.primary} />
-            <ThemedText style={styles.cardTitle}>Achievements</ThemedText>
-            <ThemedText style={styles.cardSubtitle}>View your progress</ThemedText>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+          <View style={styles.placeholderContainer}>
+            <Ionicons name="book" size={64} color={AdminColors.accent} style={{ opacity: 0.3 }} />
+            <ThemedText style={styles.placeholderText}>Student dashboard content coming soon</ThemedText>
+          </View>
+        </ScrollView>
+      </AdminLayout>
 
       <Modal
         animationType="slide"
         transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
+        visible={profileModalVisible}
+        onRequestClose={() => setProfileModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <ThemedText style={styles.modalTitle}>Profile</ThemedText>
-            <ThemedText style={styles.modalText}>Name: {session?.displayName || 'N/A'}</ThemedText>
-            <ThemedText style={styles.modalText}>Username: {session?.email || 'N/A'}</ThemedText>
-            <ThemedText style={styles.modalText}>Role: {session?.role || 'N/A'}</ThemedText>
+            <ThemedText style={styles.modalTitle}>Student Profile</ThemedText>
+            <View style={styles.profileInfoContainer}>
+              <ThemedText style={styles.infoLabel}>Name:</ThemedText>
+              <ThemedText style={styles.infoValue}>{session?.displayName || 'N/A'}</ThemedText>
+
+              <ThemedText style={styles.infoLabel}>Email:</ThemedText>
+              <ThemedText style={styles.infoValue}>{session?.email || 'N/A'}</ThemedText>
+
+              <ThemedText style={styles.infoLabel}>Role:</ThemedText>
+              <ThemedText style={styles.infoValue}>{session?.role || 'N/A'}</ThemedText>
+            </View>
             <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+              <Ionicons name="log-out" size={18} color="#fff" />
               <ThemedText style={styles.logoutText}>Logout</ThemedText>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setProfileModalVisible(false)}
+            >
               <ThemedText style={styles.closeText}>Close</ThemedText>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#FFF8E1', // Warm background color
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start', // Profile icon in top-left
-    padding: 16,
-    paddingTop: 10,
-  },
-  profileIcon: {
-    padding: 8,
-  },
-  scrollContainer: {
-    flexGrow: 1,
     paddingHorizontal: 16,
-    paddingBottom: 20,
+    paddingVertical: 16,
   },
   welcomeSection: {
-    marginTop: 20,
     marginBottom: 30,
-    alignItems: 'center',
   },
   welcomeTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: Colors.light.primary,
-    textAlign: 'center',
+    fontSize: 24,
+    fontWeight: '800',
+    color: AdminColors.primary,
     marginBottom: 8,
+    letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
+    fontSize: 13,
+    color: AdminColors.textLight,
+    fontWeight: '500',
   },
-  cardsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 16,
-    width: '48%',
+  placeholderContainer: {
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    justifyContent: 'center',
+    paddingVertical: 100,
   },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: Colors.light.primary,
-    marginTop: 10,
-    textAlign: 'center',
-  },
-  cardSubtitle: {
-    fontSize: 12,
-    color: '#666',
-    textAlign: 'center',
-    marginTop: 4,
+  placeholderText: {
+    fontSize: 14,
+    color: AdminColors.textLight,
+    fontWeight: '600',
+    marginTop: 12,
   },
   modalOverlay: {
     flex: 1,
@@ -166,39 +138,67 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalContent: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 10,
-    width: '80%',
+    backgroundColor: AdminColors.card,
+    padding: 24,
+    borderRadius: 12,
+    width: '85%',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 8,
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: '800',
+    color: AdminColors.primary,
     marginBottom: 20,
   },
-  modalText: {
-    fontSize: 16,
-    marginBottom: 10,
+  profileInfoContainer: {
+    width: '100%',
+    marginBottom: 24,
+  },
+  infoLabel: {
+    fontSize: 12,
+    color: AdminColors.textLight,
+    fontWeight: '700',
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  infoValue: {
+    fontSize: 14,
+    color: AdminColors.text,
+    fontWeight: '600',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: AdminColors.background,
+    borderRadius: 6,
   },
   logoutButton: {
-    backgroundColor: '#ff4444',
-    padding: 10,
-    borderRadius: 5,
-    marginTop: 20,
+    backgroundColor: AdminColors.danger,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
     width: '100%',
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 12,
   },
   logoutText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 14,
+    fontWeight: '700',
   },
   closeButton: {
-    marginTop: 10,
-    padding: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
   },
   closeText: {
-    color: '#007bff',
-    fontSize: 16,
+    color: AdminColors.accent,
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

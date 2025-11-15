@@ -1,7 +1,6 @@
-import { Stack } from 'expo-router';
-import React, { useEffect } from 'react';
 import { useSession } from '@/context/AuthContext';
-import { router } from 'expo-router';
+import { router, Stack } from 'expo-router';
+import React, { useEffect } from 'react';
 
 export default function AppLayout() {
   const { session, isLoading } = useSession();
@@ -26,6 +25,7 @@ export default function AppLayout() {
       <Stack.Screen name="teacher-dashboard" options={{ title: 'Teacher Dashboard' }} />
       <Stack.Screen name="admin-dashboard" options={{ title: 'Admin Dashboard' }} />
       <Stack.Screen name="user-management" options={{ title: 'User Management' }} />
+      <Stack.Screen name="admin-analytics" options={{ title: 'Analytics' }} />
     </Stack>
   );
 }

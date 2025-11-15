@@ -1,17 +1,16 @@
+import { AdminColors, AdminLayout } from '@/components/admin/AdminLayout';
 import { ThemedText } from '@/components/themed-text';
-import { Colors } from '@/constants/theme';
-import { Stack, router } from 'expo-router';
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, TouchableOpacity, Modal, Alert, BackHandler, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { useSession } from '@/context/AuthContext';
-import { signOut } from 'firebase/auth';
 import { auth } from '@/constants/firebase';
+import { useSession } from '@/context/AuthContext';
+import { Ionicons } from '@expo/vector-icons';
+import { Stack, router } from 'expo-router';
+import { signOut } from 'firebase/auth';
+import React, { useEffect, useState } from 'react';
+import { Alert, BackHandler, Modal, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 export default function AdminDashboardScreen() {
   const { session } = useSession();
-  const [modalVisible, setModalVisible] = useState(false);
+  const [profileModalVisible, setProfileModalVisible] = useState(false);
 
   useEffect(() => {
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => true);
@@ -27,177 +26,236 @@ export default function AdminDashboardScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <>
       <Stack.Screen options={{ headerShown: false }} />
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.profileIcon}>
-          <Ionicons name="person-circle" size={40} color={Colors.light.primary} />
-        </TouchableOpacity>
-      </View>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.welcomeSection}>
-          <ThemedText style={styles.welcomeTitle}>Welcome back, {session?.displayName || 'Admin'}!</ThemedText>
-          <ThemedText style={styles.subtitle}>Oversee the platform and manage all users.</ThemedText>
+      <AdminLayout
+        title="Admin Dashboard"
+        showHeader
+        showFooter
+        showSidebar
+        onProfilePress={() => setProfileModalVisible(true)}
+      >
+        <View style={styles.content}>
+          {/* Welcome Section */}
+          <View style={styles.welcomeSection}>
+            <ThemedText style={styles.welcomeTitle}>
+              Welcome back, {session?.displayName || 'Admin'}!
+            </ThemedText>
+            <ThemedText style={styles.subtitle}>
+              Oversee the platform and manage all resources.
+            </ThemedText>
+          </View>
+
+          {/* Placeholder for dashboard content */}
+          <View style={styles.placeholderContainer}>
+            <Ionicons name="construct" size={64} color={AdminColors.accent} style={{ opacity: 0.3 }} />
+            <ThemedText style={styles.placeholderText}>Dashboard content coming soon</ThemedText>
+          </View>
         </View>
+      </AdminLayout>
 
-        <View style={styles.cardsContainer}>
-          <TouchableOpacity style={styles.card} onPress={() => router.push('/(app)/user-management')}>
-            <Ionicons name="people" size={50} color={Colors.light.primary} />
-            <ThemedText style={styles.cardTitle}>User Management</ThemedText>
-            <ThemedText style={styles.cardSubtitle}>Manage users and roles</ThemedText>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.card}>
-            <Ionicons name="analytics" size={50} color={Colors.light.primary} />
-            <ThemedText style={styles.cardTitle}>Analytics</ThemedText>
-            <ThemedText style={styles.cardSubtitle}>View platform stats</ThemedText>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.card}>
-            <Ionicons name="settings" size={50} color={Colors.light.primary} />
-            <ThemedText style={styles.cardTitle}>System Settings</ThemedText>
-            <ThemedText style={styles.cardSubtitle}>Configure platform</ThemedText>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.card}>
-            <Ionicons name="shield-checkmark" size={50} color={Colors.light.primary} />
-            <ThemedText style={styles.cardTitle}>Security</ThemedText>
-            <ThemedText style={styles.cardSubtitle}>Monitor and secure</ThemedText>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-
+      {/* Profile Modal */}
       <Modal
         animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
+        transparent
+        visible={profileModalVisible}
+        onRequestClose={() => setProfileModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <ThemedText style={styles.modalTitle}>Profile</ThemedText>
-            <ThemedText style={styles.modalText}>Name: {session?.displayName || 'N/A'}</ThemedText>
-            <ThemedText style={styles.modalText}>Username: {session?.email || 'N/A'}</ThemedText>
-            <ThemedText style={styles.modalText}>Role: {session?.role || 'N/A'}</ThemedText>
-            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-              <ThemedText style={styles.logoutText}>Logout</ThemedText>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
-              <ThemedText style={styles.closeText}>Close</ThemedText>
-            </TouchableOpacity>
+            <View style={styles.modalHeader}>
+              <ThemedText style={styles.modalTitle}>Admin Profile</ThemedText>
+              <TouchableOpacity onPress={() => setProfileModalVisible(false)}>
+                <Ionicons name="close" size={28} color={AdminColors.primary} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.profileInfo}>
+              <View style={styles.avatarContainer}>
+                <Ionicons name="person-circle" size={80} color={AdminColors.accent} />
+              </View>
+              <ThemedText style={styles.profileName}>{session?.displayName || 'Admin User'}</ThemedText>
+              <ThemedText style={styles.profileEmail}>{session?.email || 'admin@skillflow.com'}</ThemedText>
+              <View style={styles.profileBadge}>
+                <Ionicons name="shield-checkmark" size={16} color="#ffffff" />
+                <ThemedText style={styles.badgeText}>Administrator</ThemedText>
+              </View>
+            </View>
+
+            <View style={styles.profileDetails}>
+              <View style={styles.detailRow}>
+                <ThemedText style={styles.detailLabel}>Role</ThemedText>
+                <ThemedText style={styles.detailValue}>{session?.role || 'N/A'}</ThemedText>
+              </View>
+              <View style={styles.detailRow}>
+                <ThemedText style={styles.detailLabel}>Bio</ThemedText>
+                <ThemedText style={styles.detailValue}>{session?.bio || 'No bio set'}</ThemedText>
+              </View>
+            </View>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.editButton]}
+                onPress={() => {
+                  setProfileModalVisible(false);
+                  router.push('/settings' as any);
+                }}
+              >
+                <Ionicons name="pencil" size={20} color="#ffffff" />
+                <ThemedText style={styles.buttonText}>Edit Profile</ThemedText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.logoutButton]}
+                onPress={() => {
+                  setProfileModalVisible(false);
+                  handleLogout();
+                }}
+              >
+                <Ionicons name="log-out" size={20} color="#ffffff" />
+                <ThemedText style={styles.buttonText}>Logout</ThemedText>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFF8E1', // Warm background color
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start', // Profile icon in top-left
-    padding: 16,
-  },
-  profileIcon: {
-    padding: 8,
-  },
-  scrollContainer: {
-    flexGrow: 1,
+  content: {
     paddingHorizontal: 16,
-    paddingBottom: 20,
+    paddingVertical: 20,
   },
   welcomeSection: {
-    marginTop: 20,
-    marginBottom: 30,
-    alignItems: 'center',
+    marginBottom: 24,
   },
   welcomeTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: Colors.light.primary,
-    textAlign: 'center',
-    marginBottom: 8,
+    fontSize: 26,
+    fontWeight: '800',
+    color: AdminColors.primary,
+    marginBottom: 4,
+    letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
+    fontSize: 14,
+    color: AdminColors.textLight,
+    fontWeight: '500',
   },
-  cardsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 16,
-    width: '48%',
+  placeholderContainer: {
+    flex: 1,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    justifyContent: 'center',
+    paddingVertical: 100,
   },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: Colors.light.primary,
-    marginTop: 10,
-    textAlign: 'center',
-  },
-  cardSubtitle: {
-    fontSize: 12,
-    color: '#666',
-    textAlign: 'center',
-    marginTop: 4,
+  placeholderText: {
+    fontSize: 14,
+    color: AdminColors.textLight,
+    fontWeight: '600',
+    marginTop: 12,
   },
   modalOverlay: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 10,
-    width: '80%',
+    backgroundColor: AdminColors.card,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingBottom: 30,
+    maxHeight: '90%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: AdminColors.border,
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 20,
+    fontSize: 18,
+    fontWeight: '700',
+    color: AdminColors.primary,
   },
-  modalText: {
-    fontSize: 16,
-    marginBottom: 10,
+  profileInfo: {
+    alignItems: 'center',
+    paddingVertical: 20,
   },
-  logoutButton: {
-    backgroundColor: '#ff4444',
-    padding: 10,
-    borderRadius: 5,
-    marginTop: 20,
-    width: '100%',
+  avatarContainer: {
+    marginBottom: 12,
+  },
+  profileName: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: AdminColors.primary,
+    marginBottom: 4,
+  },
+  profileEmail: {
+    fontSize: 13,
+    color: AdminColors.textLight,
+    marginBottom: 12,
+    fontWeight: '500',
+  },
+  profileBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: AdminColors.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  badgeText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  profileDetails: {
+    backgroundColor: AdminColors.background,
+    borderRadius: 12,
+    padding: 16,
+    marginVertical: 16,
+    gap: 12,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
-  logoutText: {
-    color: '#fff',
-    fontSize: 16,
+  detailLabel: {
+    fontSize: 13,
+    color: AdminColors.textLight,
+    fontWeight: '600',
   },
-  closeButton: {
-    marginTop: 10,
-    padding: 10,
+  detailValue: {
+    fontSize: 13,
+    color: AdminColors.primary,
+    fontWeight: '600',
   },
-  closeText: {
-    color: '#007bff',
-    fontSize: 16,
+  modalActions: {
+    gap: 10,
+    marginTop: 20,
+  },
+  modalButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 10,
+  },
+  editButton: {
+    backgroundColor: AdminColors.accent,
+  },
+  logoutButton: {
+    backgroundColor: AdminColors.danger,
+  },
+  buttonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '700',
   },
 });

@@ -1,82 +1,72 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity, Alert, FlatList } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { AdminColors, AdminLayout } from '@/components/admin/AdminLayout';
 import { ThemedText } from '@/components/themed-text';
-import { Colors } from '@/constants/theme';
-import { Ionicons } from '@expo/vector-icons';
-import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/constants/firebase';
 import { useSession } from '@/context/AuthContext';
-import { Stack, router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { Stack } from 'expo-router';
+import { collection, deleteDoc, doc, getDocs, updateDoc } from 'firebase/firestore';
+import React, { useEffect, useState } from 'react';
+import { Alert, FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 export default function UserManagement() {
   const { session } = useSession();
   const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const querySnapshot = await getDocs(collection(db, 'profiles'));
-        const userList: any[] = [];
-        querySnapshot.forEach((doc) => {
-          userList.push({ id: doc.id, ...doc.data() });
-        });
-        setUsers(userList);
-      } catch (error) {
-        Alert.alert('Error', 'Failed to fetch users');
-      }
-    };
     fetchUsers();
   }, []);
 
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const querySnapshot = await getDocs(collection(db, 'profiles'));
+      const userList: any[] = [];
+      querySnapshot.forEach((doc) => {
+        userList.push({ id: doc.id, ...doc.data() });
+      });
+      setUsers(userList);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to fetch users');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const promoteToAdmin = async (userId: string) => {
-    console.log('Promoting user to admin:', userId);
     try {
       const userDoc = doc(db, 'profiles', userId);
-      console.log('Updating doc:', userDoc.path);
       await updateDoc(userDoc, { role: 'admin' });
-      console.log('Update successful');
       Alert.alert('Success', 'User promoted to admin');
-      // Refresh users
       setUsers(users.map(user => user.id === userId ? { ...user, role: 'admin' } : user));
     } catch (error) {
-      console.error('Error promoting user:', error);
       Alert.alert('Error', `Failed to promote user: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
   const suspendUser = async (userId: string) => {
-    console.log('Suspending user:', userId);
     try {
       const userDoc = doc(db, 'profiles', userId);
-      console.log('Updating doc for suspend:', userDoc.path);
       await updateDoc(userDoc, { suspended: true });
-      console.log('Suspend update successful');
       Alert.alert('Success', 'User suspended');
       setUsers(users.map(user => user.id === userId ? { ...user, suspended: true } : user));
     } catch (error) {
-      console.error('Error suspending user:', error);
       Alert.alert('Error', `Failed to suspend user: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
   const unsuspendUser = async (userId: string) => {
-    console.log('Unsuspending user:', userId);
     try {
       const userDoc = doc(db, 'profiles', userId);
-      console.log('Updating doc for unsuspend:', userDoc.path);
       await updateDoc(userDoc, { suspended: false });
-      console.log('Unsuspend update successful');
       Alert.alert('Success', 'User unsuspended');
       setUsers(users.map(user => user.id === userId ? { ...user, suspended: false } : user));
     } catch (error) {
-      console.error('Error unsuspending user:', error);
       Alert.alert('Error', `Failed to unsuspend user: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
   const deleteUser = async (userId: string) => {
-    console.log('Deleting user:', userId);
     Alert.alert(
       'Confirm Delete',
       'Are you sure you want to delete this user? This action cannot be undone.',
@@ -88,13 +78,10 @@ export default function UserManagement() {
           onPress: async () => {
             try {
               const userDoc = doc(db, 'profiles', userId);
-              console.log('Deleting doc:', userDoc.path);
               await deleteDoc(userDoc);
-              console.log('Delete successful');
               Alert.alert('Success', 'User deleted');
               setUsers(users.filter(user => user.id !== userId));
             } catch (error) {
-              console.error('Error deleting user:', error);
               Alert.alert('Error', `Failed to delete user: ${error instanceof Error ? error.message : 'Unknown error'}`);
             }
           },
@@ -104,171 +91,291 @@ export default function UserManagement() {
   };
 
   const renderUser = ({ item }: { item: any }) => (
-    <View style={styles.userItem}>
-      <View style={styles.userInfo}>
-        <ThemedText style={styles.userName}>{item.displayName || 'N/A'}</ThemedText>
-        <ThemedText style={styles.userEmail}>{item.email || 'N/A'}</ThemedText>
-        <ThemedText style={styles.userRole}>Role: {item.role || 'student'}</ThemedText>
-        {item.suspended && <ThemedText style={styles.suspendedText}>Suspended</ThemedText>}
+    <View style={styles.userCard}>
+      <View style={styles.userHeader}>
+        <View style={[styles.userAvatar, { backgroundColor: `${AdminColors.accent}20` }]}>
+          <Ionicons name="person" size={24} color={AdminColors.accent} />
+        </View>
+        <View style={styles.userInfo}>
+          <ThemedText style={styles.userName}>{item.displayName || 'Unknown'}</ThemedText>
+          <ThemedText style={styles.userEmail}>{item.email || 'N/A'}</ThemedText>
+        </View>
+        <View style={[styles.roleBadge, { backgroundColor: getRoleColor(item.role) }]}>
+          <ThemedText style={styles.roleBadgeText}>{item.role || 'student'}</ThemedText>
+        </View>
       </View>
-      <View style={styles.actions}>
+
+      {item.suspended && (
+        <View style={styles.suspendedBanner}>
+          <Ionicons name="alert-circle" size={16} color={AdminColors.danger} />
+          <ThemedText style={styles.suspendedText}>Suspended</ThemedText>
+        </View>
+      )}
+
+      <View style={styles.userActions}>
         {item.role !== 'admin' && item.id !== session?.uid && (
-          <TouchableOpacity style={[styles.actionButton, styles.promoteButton]} onPress={() => promoteToAdmin(item.id)}>
-            <Ionicons name="arrow-up-circle" size={24} color="#fff" />
-            <ThemedText style={styles.actionText}>Promote to Admin</ThemedText>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.promoteBtn]}
+            onPress={() => promoteToAdmin(item.id)}
+          >
+            <Ionicons name="arrow-up-circle" size={18} color="#ffffff" />
+            <ThemedText style={styles.actionText}>Promote</ThemedText>
           </TouchableOpacity>
         )}
         {item.id !== session?.uid && (
-          <View style={styles.secondaryActions}>
+          <>
             {!item.suspended ? (
-              <TouchableOpacity style={[styles.secondaryButton, styles.suspendButton]} onPress={() => suspendUser(item.id)}>
-                <Ionicons name="pause-circle" size={20} color="#fff" />
-                <ThemedText style={styles.secondaryText}>Suspend</ThemedText>
+              <TouchableOpacity
+                style={[styles.actionButton, styles.suspendBtn]}
+                onPress={() => suspendUser(item.id)}
+              >
+                <Ionicons name="pause-circle" size={18} color="#ffffff" />
+                <ThemedText style={styles.actionText}>Suspend</ThemedText>
               </TouchableOpacity>
             ) : (
-              <TouchableOpacity style={[styles.secondaryButton, styles.unsuspendButton]} onPress={() => unsuspendUser(item.id)}>
-                <Ionicons name="play-circle" size={20} color="#fff" />
-                <ThemedText style={styles.secondaryText}>Unsuspend</ThemedText>
+              <TouchableOpacity
+                style={[styles.actionButton, styles.unsuspendBtn]}
+                onPress={() => unsuspendUser(item.id)}
+              >
+                <Ionicons name="play-circle" size={18} color="#ffffff" />
+                <ThemedText style={styles.actionText}>Unsuspend</ThemedText>
               </TouchableOpacity>
             )}
-            <TouchableOpacity style={[styles.secondaryButton, styles.deleteButton]} onPress={() => deleteUser(item.id)}>
-              <Ionicons name="trash" size={20} color="#fff" />
-              <ThemedText style={styles.secondaryText}>Delete</ThemedText>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.deleteBtn]}
+              onPress={() => deleteUser(item.id)}
+            >
+              <Ionicons name="trash" size={18} color="#ffffff" />
+              <ThemedText style={styles.actionText}>Delete</ThemedText>
             </TouchableOpacity>
-          </View>
+          </>
         )}
       </View>
     </View>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <>
       <Stack.Screen options={{ headerShown: false }} />
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={Colors.light.primary} />
-        </TouchableOpacity>
-        <ThemedText style={styles.title}>User Management</ThemedText>
-      </View>
-      <FlatList
-        data={users}
-        keyExtractor={(item) => item.id}
-        renderItem={renderUser}
-        contentContainerStyle={styles.listContainer}
-      />
-    </SafeAreaView>
+      <AdminLayout
+        title="User Management"
+        showHeader
+        showFooter
+        showSidebar
+      >
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <ThemedText style={styles.title}>User Management</ThemedText>
+            <View style={styles.stats}>
+              <View style={styles.statItem}>
+                <ThemedText style={styles.statNumber}>{users.length}</ThemedText>
+                <ThemedText style={styles.statLabel}>Total Users</ThemedText>
+              </View>
+              <View style={styles.statItem}>
+                <ThemedText style={styles.statNumber}>{users.filter(u => u.role === 'admin').length}</ThemedText>
+                <ThemedText style={styles.statLabel}>Admins</ThemedText>
+              </View>
+              <View style={styles.statItem}>
+                <ThemedText style={styles.statNumber}>{users.filter(u => u.suspended).length}</ThemedText>
+                <ThemedText style={styles.statLabel}>Suspended</ThemedText>
+              </View>
+            </View>
+          </View>
+
+          {loading ? (
+            <ThemedText style={styles.loadingText}>Loading users...</ThemedText>
+          ) : users.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="people" size={64} color={AdminColors.accent} style={{ opacity: 0.3 }} />
+              <ThemedText style={styles.emptyText}>No users found</ThemedText>
+            </View>
+          ) : (
+            <FlatList
+              data={users}
+              keyExtractor={(item) => item.id}
+              renderItem={renderUser}
+              scrollEnabled={false}
+              ItemSeparatorComponent={() => <View style={styles.separator} />}
+            />
+          )}
+        </View>
+      </AdminLayout>
+    </>
   );
 }
 
+const getRoleColor = (role: string) => {
+  switch (role) {
+    case 'admin':
+      return AdminColors.danger;
+    case 'teacher':
+      return AdminColors.accentLight;
+    case 'student':
+    default:
+      return AdminColors.accent;
+  }
+};
+
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#FFF8E1', // Warm background
+    paddingHorizontal: 16,
+    paddingVertical: 16,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 20,
-  },
-  backButton: {
-    marginRight: 10,
+    marginBottom: 24,
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: Colors.light.primary,
+    fontWeight: '800',
+    color: AdminColors.primary,
+    marginBottom: 14,
+    letterSpacing: -0.5,
+  },
+  stats: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  statItem: {
     flex: 1,
-    textAlign: 'center',
-  },
-  listContainer: {
-    padding: 20,
-  },
-  userItem: {
-    backgroundColor: '#fff',
-    padding: 15,
-    marginBottom: 10,
+    backgroundColor: AdminColors.card,
     borderRadius: 10,
+    padding: 12,
+    alignItems: 'center',
+    borderLeftWidth: 3,
+    borderLeftColor: AdminColors.accent,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  statNumber: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: AdminColors.primary,
+  },
+  statLabel: {
+    fontSize: 11,
+    color: AdminColors.textLight,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  userCard: {
+    backgroundColor: AdminColors.card,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
   },
-  userInfo: {
+  userHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
     marginBottom: 10,
   },
+  userAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  userInfo: {
+    flex: 1,
+  },
   userName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 5,
+    fontSize: 14,
+    fontWeight: '700',
+    color: AdminColors.primary,
+    marginBottom: 2,
   },
   userEmail: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 5,
-  },
-  userRole: {
-    fontSize: 14,
-    color: Colors.light.primary,
+    fontSize: 11,
+    color: AdminColors.textLight,
     fontWeight: '500',
+  },
+  roleBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  roleBadgeText: {
+    color: '#ffffff',
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'capitalize',
+  },
+  suspendedBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: `${AdminColors.danger}15`,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginBottom: 10,
   },
   suspendedText: {
     fontSize: 12,
-    color: '#ff4444',
-    fontWeight: 'bold',
+    color: AdminColors.danger,
+    fontWeight: '600',
   },
-  actions: {
-    alignItems: 'center',
+  userActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
   },
   actionButton: {
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
     flexDirection: 'row',
-    marginBottom: 8,
-    minWidth: 120,
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    justifyContent: 'center',
   },
-  suspendButton: {
-    backgroundColor: '#ff8800',
+  promoteBtn: {
+    backgroundColor: AdminColors.primary,
   },
-  unsuspendButton: {
-    backgroundColor: '#00aa00',
+  suspendBtn: {
+    backgroundColor: AdminColors.warning,
   },
-  deleteButton: {
-    backgroundColor: '#ff4444',
+  unsuspendBtn: {
+    backgroundColor: AdminColors.success,
+  },
+  deleteBtn: {
+    backgroundColor: AdminColors.danger,
   },
   actionText: {
-    color: '#fff',
-    fontSize: 12,
-    marginLeft: 5,
-    fontWeight: 'bold',
+    color: '#ffffff',
+    fontSize: 11,
+    fontWeight: '700',
   },
-  promoteButton: {
-    backgroundColor: Colors.light.primary,
+  separator: {
+    height: 1,
+    backgroundColor: AdminColors.border,
+    marginVertical: 8,
   },
-  promoteText: {
-    color: '#fff',
-    fontSize: 12,
-    marginLeft: 5,
-    fontWeight: 'bold',
+  loadingText: {
+    textAlign: 'center',
+    color: AdminColors.textLight,
+    fontSize: 14,
+    marginTop: 20,
   },
-  secondaryActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-  },
-  secondaryButton: {
-    padding: 8,
-    borderRadius: 6,
+  emptyContainer: {
     alignItems: 'center',
-    flexDirection: 'row',
-    flex: 1,
-    marginHorizontal: 2,
+    justifyContent: 'center',
+    paddingVertical: 60,
   },
-  secondaryText: {
-    color: '#fff',
-    fontSize: 10,
-    marginLeft: 3,
+  emptyText: {
+    fontSize: 16,
+    color: AdminColors.textLight,
+    fontWeight: '600',
+    marginTop: 12,
   },
 });
