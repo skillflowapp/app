@@ -22,7 +22,9 @@ export default function AppLayout() {
   return (
     <Stack>
       <Stack.Screen name="student-dashboard" options={{ title: 'Student Dashboard' }} />
+      <Stack.Screen name="student-settings" options={{ title: 'Student Settings' }} />
       <Stack.Screen name="teacher-dashboard" options={{ title: 'Teacher Dashboard' }} />
+      <Stack.Screen name="teacher-profile" options={{ title: 'Teacher Profile' }} />
       <Stack.Screen name="admin-dashboard" options={{ title: 'Admin Dashboard' }} />
       <Stack.Screen name="user-management" options={{ title: 'User Management' }} />
       <Stack.Screen name="admin-analytics" options={{ title: 'Analytics' }} />

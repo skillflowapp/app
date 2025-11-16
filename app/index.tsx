@@ -1,8 +1,8 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Fonts, ButtonStyles, Colors } from '../constants/theme';
 import { router } from 'expo-router';
+import React, { useEffect, useRef } from 'react';
+import { ActivityIndicator, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ButtonStyles, Fonts } from '../constants/theme';
 import { useSession } from '../context/AuthContext';
 
 const WelcomeScreen = () => {
@@ -13,7 +13,7 @@ const WelcomeScreen = () => {
     console.log('Index useEffect: isLoading:', isLoading, 'session:', session ? { uid: session.uid, role: session.role } : null, 'hasRedirected:', hasRedirected.current);
     if (isLoading || hasRedirected.current) return;
     if (session) {
-      let targetDashboard = '/(app)/student-dashboard';
+      let targetDashboard: any = '/(app)/student-dashboard';
       console.log('Session role:', session.role);
       if (session.role === 'admin') {
         targetDashboard = '/(app)/admin-dashboard';
@@ -21,10 +21,35 @@ const WelcomeScreen = () => {
         targetDashboard = '/(app)/teacher-dashboard';
       }
       console.log('Redirecting to:', targetDashboard);
-      router.replace(targetDashboard);
       hasRedirected.current = true;
+      router.replace(targetDashboard);
     }
   }, [session?.uid, session?.role, isLoading]);
+
+  // Show loading screen while checking session OR if we have a session and are redirecting
+  if (isLoading || (session && hasRedirected.current)) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <LinearGradient
+          colors={['#4F46E5', '#38BDF8']}
+          style={styles.gradient}
+        >
+          <View style={styles.loadingContent}>
+            <View style={styles.gifContainer}>
+              <Image source={require('../assets/images/welcome.gif')} style={styles.gif} />
+            </View>
+            <Text style={styles.logo}>SkillFlow</Text>
+            <Text style={styles.tagline}>Learn · Share · Earn</Text>
+            
+            <View style={styles.loadingIndicator}>
+              <ActivityIndicator size="large" color="#FFFFFF" />
+              <Text style={styles.loadingText}>Initializing your session...</Text>
+            </View>
+          </View>
+        </LinearGradient>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -69,6 +94,11 @@ const styles = StyleSheet.create({
     width: '80%',
     alignItems: 'center',
   },
+  loadingContent: {
+    width: '80%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   gifContainer: {
     backgroundColor: '#FFFFFF',
     borderRadius: 125,
@@ -92,6 +122,17 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#FFFFFF',
     marginBottom: 48,
+  },
+  loadingIndicator: {
+    alignItems: 'center',
+    marginTop: 40,
+  },
+  loadingText: {
+    fontFamily: Fonts.family.sans,
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#FFFFFF',
+    marginTop: 16,
   },
   button: {
     width: '100%',

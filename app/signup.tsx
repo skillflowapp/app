@@ -1,23 +1,28 @@
 import { ThemedText } from '@/components/themed-text';
-import { Colors } from '@/constants/theme';
-import { router, Stack } from 'expo-router';
-import React, { useState, useEffect } from 'react';
-import { Image, StyleSheet, TextInput, TouchableOpacity, View, Alert, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { AntDesign, FontAwesome } from '@expo/vector-icons';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import { createUserWithEmailAndPassword, updateProfile, signOut } from 'firebase/auth';
+import { COUNTRY_CODES, CountryCode } from '@/constants/countryCodes';
 import { auth, db } from '@/constants/firebase';
+import { Colors } from '@/constants/theme';
+import { AntDesign } from '@expo/vector-icons';
+import { router, Stack } from 'expo-router';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, FlatList, Image, Modal, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSession } from '../context/AuthContext';
 
 export default function SignupScreen() {
   const { session, isLoading: authLoading } = useSession();
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [selectedCountry, setSelectedCountry] = useState<CountryCode>(COUNTRY_CODES[0]);
+  const [phone, setPhone] = useState('');
   const [role, setRole] = useState<'student' | 'teacher'>('student');
   const [loading, setLoading] = useState(false);
+  const [showCountryModal, setShowCountryModal] = useState(false);
 
   useEffect(() => {
     if (!authLoading && session) {
@@ -32,6 +37,18 @@ export default function SignupScreen() {
   }, [session, authLoading]);
 
   const handleSignup = () => {
+    if (!name.trim()) {
+      Alert.alert('Error', 'Please enter your name');
+      return;
+    }
+    if (!email.trim()) {
+      Alert.alert('Error', 'Please enter your email');
+      return;
+    }
+    if (!phone.trim()) {
+      Alert.alert('Error', 'Please enter your phone number');
+      return;
+    }
     if (password !== confirmPassword) {
       Alert.alert("Passwords don't match", "Please make sure your passwords match.");
       return;
@@ -40,25 +57,28 @@ export default function SignupScreen() {
     createUserWithEmailAndPassword(auth, email, password)
       .then(userCredential => {
         const user = userCredential.user;
-        const nameFromEmail = email.split('@')[0];
-        updateProfile(user, { displayName: nameFromEmail })
+        updateProfile(user, { displayName: name })
           .then(() => {
             // Create a document in Firestore
             const userDocRef = doc(db, 'profiles', user.uid);
             setDoc(userDocRef, { 
-              bio: 'This is a default bio.', // Default bio
-              displayName: nameFromEmail,
+              bio: 'This is a default bio.',
+              displayName: name,
               email: user.email,
+              phone: `${selectedCountry.dialCode}${phone}`,
               role: role,
             }, { merge: true })
             .then(() => {
-              // Sign out the user so they can log in again with the profile
-              signOut(auth).then(() => {
-                router.replace('/login');
-              }).catch(signOutError => {
-                console.error('Error signing out:', signOutError);
-                router.replace('/login');
-              });
+              // Show success notification and redirect to appropriate dashboard
+              Alert.alert('Success! ✓', 'Account created successfully. Welcome to SkillFlow!', [
+                {
+                  text: 'Continue',
+                  onPress: () => {
+                    const targetDashboard = role === 'teacher' ? '/(app)/teacher-dashboard' : '/(app)/student-dashboard';
+                    router.replace(targetDashboard);
+                  }
+                }
+              ]);
             })
             .catch(error => {
               Alert.alert('Error creating profile', error.message);
@@ -78,19 +98,11 @@ export default function SignupScreen() {
       });
   };
 
-  const handleGoogleSignup = () => {
-    Alert.alert("Google Signup", "This feature is not yet implemented.");
-  };
-
-  const handleAppleSignup = () => {
-    Alert.alert("Apple Signup", "This feature is not yet implemented.");
-  };
-
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.navigationHeader}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity onPress={() => router.replace('/')} style={styles.backButton}>
           <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
       </View>
@@ -122,6 +134,18 @@ export default function SignupScreen() {
           </View>
 
           <View style={styles.inputContainer}>
+            <ThemedText style={styles.label}>FULL NAME</ThemedText>
+            <TextInput
+              style={styles.input}
+              placeholder="John Doe"
+              placeholderTextColor="#999"
+              autoCapitalize="words"
+              onChangeText={setName}
+              value={name}
+            />
+          </View>
+
+          <View style={styles.inputContainer}>
             <ThemedText style={styles.label}>EMAIL</ThemedText>
             <TextInput
               style={styles.input}
@@ -132,6 +156,27 @@ export default function SignupScreen() {
               onChangeText={setEmail}
               value={email}
             />
+          </View>
+
+          <View style={styles.inputContainer}>
+            <ThemedText style={styles.label}>PHONE NUMBER</ThemedText>
+            <View style={styles.phoneInputWrapper}>
+              <TouchableOpacity
+                style={styles.countrySelector}
+                onPress={() => setShowCountryModal(true)}
+              >
+                <ThemedText style={styles.countryFlag}>{selectedCountry.flag}</ThemedText>
+                <ThemedText style={styles.countryCode}>{selectedCountry.dialCode}</ThemedText>
+              </TouchableOpacity>
+              <TextInput
+                style={[styles.input, styles.phoneInput]}
+                placeholder="7xxxxxxxx"
+                placeholderTextColor="#999"
+                keyboardType="phone-pad"
+                onChangeText={setPhone}
+                value={phone}
+              />
+            </View>
           </View>
 
           <View style={styles.inputContainer}>
@@ -166,21 +211,48 @@ export default function SignupScreen() {
             )}
           </TouchableOpacity>
 
-          <View style={styles.socialSignupContainer}>
-            <TouchableOpacity style={[styles.socialButton, styles.googleButton]} onPress={handleGoogleSignup}>
-              <AntDesign name="google" size={20} color="white" />
-              <ThemedText style={styles.socialButtonText}>Sign up with Google</ThemedText>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.socialButton, styles.appleButton]} onPress={handleAppleSignup}>
-              <FontAwesome name="apple" size={20} color="white" />
-              <ThemedText style={styles.socialButtonText}>Sign up with Apple</ThemedText>
-            </TouchableOpacity>
-          </View>
-
           <TouchableOpacity onPress={() => router.push('/login')}>
             <ThemedText style={styles.loginText}>Already have an account? Login!</ThemedText>
           </TouchableOpacity>
         </View>
+
+        {/* Country Code Modal */}
+        <Modal
+          visible={showCountryModal}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowCountryModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <View style={styles.modalHeader}>
+                <ThemedText style={styles.modalTitle}>Select Country</ThemedText>
+                <TouchableOpacity onPress={() => setShowCountryModal(false)}>
+                  <AntDesign name="close" size={24} color="#333" />
+                </TouchableOpacity>
+              </View>
+              <FlatList
+                data={COUNTRY_CODES}
+                keyExtractor={(item) => item.code}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.countryItem}
+                    onPress={() => {
+                      setSelectedCountry(item);
+                      setShowCountryModal(false);
+                    }}
+                  >
+                    <ThemedText style={styles.countryItemFlag}>{item.flag}</ThemedText>
+                    <View style={styles.countryItemInfo}>
+                      <ThemedText style={styles.countryItemName}>{item.name}</ThemedText>
+                      <ThemedText style={styles.countryItemCode}>{item.dialCode}</ThemedText>
+                    </View>
+                  </TouchableOpacity>
+                )}
+              />
+            </View>
+          </View>
+        </Modal>
       </KeyboardAwareScrollView>
     </SafeAreaView>
   );
@@ -275,6 +347,31 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
   },
+  phoneInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  countrySelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f3f4f6',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 12,
+    gap: 4,
+  },
+  countryFlag: {
+    fontSize: 24,
+  },
+  countryCode: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+  },
+  phoneInput: {
+    flex: 1,
+  },
   button: {
     backgroundColor: Colors.light.primary,
     borderRadius: 8,
@@ -300,29 +397,54 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 12,
   },
-  socialSignupContainer: {
-    width: '100%',
-    marginTop: 10,
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
   },
-  socialButton: {
-    borderRadius: 8,
-    paddingVertical: 14,
-    width: '100%',
-    alignItems: 'center',
-    marginBottom: 12,
+  modalContainer: {
+    backgroundColor: 'white',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '80%',
+  },
+  modalHeader: {
     flexDirection: 'row',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
   },
-  googleButton: {
-    backgroundColor: '#4285F4',
-  },
-  appleButton: {
-    backgroundColor: '#000000',
-  },
-  socialButtonText: {
-    color: 'white',
-    fontSize: 16,
+  modalTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
-    marginLeft: 10,
+    color: '#333',
+  },
+  countryItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+  countryItemFlag: {
+    fontSize: 28,
+    marginRight: 12,
+  },
+  countryItemInfo: {
+    flex: 1,
+  },
+  countryItemName: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
+  },
+  countryItemCode: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 2,
   },
 });

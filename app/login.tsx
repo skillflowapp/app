@@ -1,13 +1,13 @@
 
 import { ThemedText } from '@/components/themed-text';
 import { Colors } from '@/constants/theme';
+import { AntDesign } from '@expo/vector-icons';
 import { router, Stack } from 'expo-router';
-import React, { useState, useEffect } from 'react';
-import { Image, StyleSheet, TextInput, TouchableOpacity, View, Alert, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { AntDesign, FontAwesome } from '@expo/vector-icons';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Image, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { auth } from '../constants/firebase';
 import { useSession } from '../context/AuthContext';
 
@@ -25,6 +25,7 @@ export default function LoginScreen() {
       } else if (session.role === 'teacher') {
         targetDashboard = '/(app)/teacher-dashboard';
       }
+      console.log('Login page - Redirecting to:', targetDashboard);
       router.replace(targetDashboard);
     }
   }, [session, isLoading]);
@@ -43,19 +44,6 @@ export default function LoginScreen() {
       });
   };
 
-  useEffect(() => {
-    if (session && !isLoading) {
-      let targetDashboard = '/(app)/student-dashboard';
-      if (session.role === 'admin') {
-        targetDashboard = '/(app)/admin-dashboard';
-      } else if (session.role === 'teacher') {
-        targetDashboard = '/(app)/teacher-dashboard';
-      }
-      console.log('Redirecting to:', targetDashboard);
-      router.replace(targetDashboard);
-    }
-  }, [session, isLoading]);
-
   const handleAppleSignup = () => {
     Alert.alert("Apple Signup", "This feature is not yet implemented.");
   };
@@ -64,7 +52,7 @@ export default function LoginScreen() {
     <SafeAreaView style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.navigationHeader}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity onPress={() => router.replace('/')} style={styles.backButton}>
           <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
       </View>
@@ -111,16 +99,6 @@ export default function LoginScreen() {
             ) : (
               <ThemedText style={styles.buttonText}>Log in</ThemedText>
             )}
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.button, styles.googleButton]}>
-            <AntDesign name="google" size={20} color="white" style={styles.icon} />
-            <ThemedText style={styles.buttonText}>Sign in with Google</ThemedText>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.button, styles.appleButton]} onPress={handleAppleSignup}>
-            <FontAwesome name="apple" size={20} color="white" style={styles.icon} />
-            <ThemedText style={styles.buttonText}>Sign in with Apple</ThemedText>
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => router.push('/signup')}>
@@ -214,19 +192,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
   },
-  googleButton: {
-    backgroundColor: '#4285F4',
-  },
-  appleButton: {
-    backgroundColor: '#000000',
-  },
   buttonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
-  },
-  icon: {
-    marginRight: 12,
   },
   signupText: {
     color: Colors.light.primary,

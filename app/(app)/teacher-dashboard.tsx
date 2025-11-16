@@ -17,7 +17,7 @@ export default function TeacherDashboard() {
     { label: 'Examination', icon: 'clipboard', route: '/(app)/teacher-dashboard' },
     { label: 'Video', icon: 'play-circle', route: '/(app)/teacher-dashboard' },
     { label: 'Upload', icon: 'cloud-upload', route: '/(app)/teacher-dashboard' },
-    { label: 'Profile', icon: 'person', route: '/(app)/teacher-dashboard' },
+    { label: 'Profile', icon: 'person', route: '/(app)/teacher-profile' },
   ];
 
   useEffect(() => {

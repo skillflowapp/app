@@ -18,9 +18,14 @@ export default function StudentDashboard() {
     { label: 'Documents', icon: 'document-text', route: '/(app)/student-dashboard' },
     { label: 'Community', icon: 'people', route: '/(app)/student-dashboard' },
     { label: 'Exams', icon: 'clipboard', route: '/(app)/student-dashboard' },
-    { label: 'Games', icon: 'game-controller', route: '/(app)/student-dashboard' },
-    { label: 'Settings', icon: 'settings', route: '/(app)/student-dashboard' },
   ];
+
+  const studentSidebarOnlyItems = [
+    { label: 'Games', icon: 'game-controller', route: '/(app)/student-dashboard' },
+    { label: 'Settings', icon: 'settings', route: '/(app)/student-settings' },
+  ];
+
+  const allStudentItems = [...studentNavigationItems, ...studentSidebarOnlyItems];
 
   useEffect(() => {
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => true);
@@ -46,7 +51,8 @@ export default function StudentDashboard() {
         showFooter
         showSidebar
         brandSubtext="Student"
-        navigationItems={studentNavigationItems}
+        navigationItems={allStudentItems}
+        footerNavigationItems={studentNavigationItems}
         onProfilePress={() => setProfileModalVisible(true)}
       >
         <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -62,6 +68,14 @@ export default function StudentDashboard() {
             <ThemedText style={styles.placeholderText}>Student dashboard content coming soon</ThemedText>
           </View>
         </ScrollView>
+
+        {/* AI Chat Floating Button */}
+        <TouchableOpacity
+          style={styles.aiChatButton}
+          onPress={() => router.push('/aichat')}
+        >
+          <Ionicons name="chatbubble" size={24} color="#fff" />
+        </TouchableOpacity>
       </AdminLayout>
 
       <Modal
@@ -200,5 +214,21 @@ const styles = StyleSheet.create({
     color: AdminColors.accent,
     fontSize: 14,
     fontWeight: '600',
+  },
+  aiChatButton: {
+    position: 'absolute',
+    bottom: 30,
+    right: 20,
+    backgroundColor: AdminColors.accent,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 12,
   },
 });

@@ -19,6 +19,7 @@ interface AdminLayoutProps {
   showSidebar?: boolean;
   onProfilePress?: () => void;
   navigationItems?: NavigationItem[];
+  footerNavigationItems?: NavigationItem[];
   brandSubtext?: string;
 }
 
@@ -45,6 +46,7 @@ export function AdminLayout({
   showSidebar = true,
   onProfilePress,
   navigationItems: customNavigationItems,
+  footerNavigationItems: customFooterItems,
   brandSubtext = 'Admin',
 }: AdminLayoutProps) {
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -58,6 +60,7 @@ export function AdminLayout({
   ];
 
   const navigationItems = customNavigationItems || defaultNavigationItems;
+  const footerItems = customFooterItems || navigationItems;
 
   const handleNavigation = (route: string) => {
     setSidebarVisible(false);
@@ -165,7 +168,7 @@ export function AdminLayout({
       {/* Footer Navigation */}
       {showFooter && (
         <View style={[styles.footer, { backgroundColor: COLORS.primary }]}>
-          {navigationItems.map((item, index) => (
+          {footerItems.map((item, index) => (
             <TouchableOpacity
               key={index}
               style={styles.footerItem}
@@ -230,7 +233,7 @@ const styles = StyleSheet.create({
   },
   sidebarOverlay: {
     flex: 1,
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   sidebarBackdrop: {
